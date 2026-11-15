@@ -61,7 +61,7 @@ Analytical windows end on the latest complete day: today once all six buildings 
 - `/` is a cover page: the ledger's current numbers on a plate, how the ledger works, what every formula means, and each building's state for today. "Get started" opens the dashboard at `/overview`.
 - `/overview` is the dashboard, `/buildings` the per-building detail, `/log` the filing form.
 - Today's meters start open: the cover page counts them, and the overview carries a "file now" callout until every building has a reading for the current day. Analytical windows close on the latest complete day, so today joins the week once all six readings are filed.
-- Backend URL is baked in at compile time from `EMBER_API_URL` (`option_env!`); with no URL set, the app runs entirely on the client-side demo dataset.
+- The API base is baked in at compile time from `EMBER_API_URL` (`option_env!`). `frontend/build.sh` defaults it to `https://ember-9fux.onrender.com`, so Vercel builds are live without extra project settings; override the env var to point at another backend. A local build with no URL set runs entirely on the client-side demo dataset.
 - With a URL set: it polls `/health` (8 s timeout) every 9 s until the backend wakes — the masthead shows a "waking the backend… try N" tag — then switches to live data, refreshing summary/alerts/leaderboard/suggestions every 6 s and full readings every 30 s. New anomalies arrive as toasts.
 - Charts are hand-built SVG (line chart with anomaly markers and crosshair tooltip, score rings, waste bars with hatched fills, a score-driven tree illustration), animated with rAF tweens, and every animation respects `prefers-reduced-motion`.
 - Responsive down to 360 px; leaderboard columns collapse on small screens.
@@ -77,18 +77,19 @@ Analytical windows end on the latest complete day: today once all six buildings 
 **Frontend on Vercel**:
 
 1. Import the repo, set Root Directory to `frontend` (framework preset: Other).
-2. Add the env var **before the first build**: `EMBER_API_URL` = `https://<your-render-service>.onrender.com` (no trailing slash). It is a compile-time input — changing it requires a redeploy.
+2. Optional: set `EMBER_API_URL` to override the default Render backend (`https://ember-9fux.onrender.com`). It is a compile-time input — changing it requires a redeploy.
 3. `vercel.json` supplies the build command (`bash ./build.sh`: installs Rust, adds the wasm target, fetches a prebuilt `trunk` binary, runs `trunk build --release`) and the `dist` output directory, SPA rewrites, and immutable caching for hashed `.js`/`.wasm` assets.
 
 **Smoke test once both are live:**
 
 ```sh
+TODAY=$(date -u +%F)
 curl -X POST https://<render-url>/readings \
   -H 'Content-Type: application/json' \
-  -d '{"building":"hostel-a","date":"2026-11-15","kwh":900,"water_l":24000,"waste_kg":{"organic":40,"plastic":18,"paper":12,"ewaste":5}}'
+  -d "{\"building\":\"hostel-a\",\"date\":\"$TODAY\",\"kwh\":900,\"water_l\":24000,\"waste_kg\":{\"organic\":40,\"plastic\":18,\"paper\":12,\"ewaste\":5}}"
 ```
 
-The open-meter count drops immediately. Once all six buildings have a reading for 2026-11-15, the day closes, the seven-day window rolls forward, and the 5 kg e-waste raises a "book a certified pickup" field note.
+The open-meter count drops immediately. Once all six buildings have a reading for today, the day closes, the seven-day window rolls forward, and the 5 kg e-waste raises a "book a certified pickup" field note.
 
 ## Local development
 
@@ -96,7 +97,7 @@ No toolchain setup is required to deploy, but both halves build conventionally:
 
 ```sh
 cd backend && cmake -B build && cmake --build build && PORT=10000 ./build/ember-server
-cd frontend && trunk serve --release    # expects EMBER_API_URL at compile time
+cd frontend && trunk serve --release    # add EMBER_API_URL=... for live data
 ```
 
 `trunk serve` without `EMBER_API_URL` renders the full UI on the demo dataset — the same 59-day seed formulas the server uses, evaluated in the browser.

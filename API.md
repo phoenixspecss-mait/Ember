@@ -1,6 +1,6 @@
 # Ember API
 
-The Ember backend is a C++17 service built with [cpp-httplib](https://github.com/yhirose/cpp-httplib). It keeps all data in memory, seeded at startup with a deterministic 59-day dataset for six campus buildings, ending yesterday so today's meters start open. The live service is deployed on Render; the frontend reads `EMBER_API_URL` (the Render URL) at compile time and talks to this API directly from the browser.
+The Ember backend is a C++17 service built with [cpp-httplib](https://github.com/yhirose/cpp-httplib). It keeps all data in memory, seeded at startup with a deterministic 59-day dataset for six campus buildings, ending yesterday so today's meters start open. The live service is deployed on Render; the frontend reads `EMBER_API_URL` (the Render URL) at compile time and talks to this API directly from the browser. The Vercel build script defaults that variable to the live Render service, so a deployed build needs no extra project settings.
 
 - All responses are `application/json; charset=utf-8`.
 - CORS is open: every response carries `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET, POST, OPTIONS`, `Access-Control-Allow-Headers: Content-Type`, `Access-Control-Max-Age: 86400`. An `OPTIONS` request to any path returns `204 No Content`.
@@ -12,7 +12,7 @@ The Ember backend is a C++17 service built with [cpp-httplib](https://github.com
 
 Status codes: `200` OK, `201` created, `400` validation error, `404` unknown route, `500` internal error.
 
-- Render's free plan sleeps the service. The frontend pings `/health` with an 8 second timeout and renders a deterministic demo dataset while it waits; if `/health` never answers (or `EMBER_API_URL` is unset) the demo dataset stays on screen behind a small `demo data` tag.
+- Render's free plan sleeps the service. The frontend pings `/health` with an 8 second timeout and renders a deterministic demo dataset while it waits; if `/health` never answers — or the frontend was built without `EMBER_API_URL`, as a local `trunk serve` is by default — the demo dataset stays on screen behind a small `demo data` tag.
 
 ---
 

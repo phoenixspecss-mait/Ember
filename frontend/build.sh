@@ -5,6 +5,8 @@ export CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
 export RUSTUP_HOME="${RUSTUP_HOME:-$HOME/.rustup}"
 export PATH="$CARGO_HOME/bin:$PATH"
 
+export EMBER_API_URL="${EMBER_API_URL:-https://ember-9fux.onrender.com}"
+
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
 source "$CARGO_HOME/env"
 rustup target add wasm32-unknown-unknown
