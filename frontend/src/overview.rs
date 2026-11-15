@@ -108,7 +108,7 @@ pub fn Overview() -> impl IntoView {
                     title="Electricity, campus-wide"
                     note="six buildings · trailing 60 days · kWh per day"
                 />
-                <LineChart points=series anomalies=Some(anom) unit=" kWh" aria=chart_aria/>
+                <LineChart points=series anomalies=anom unit=" kWh" aria=chart_aria/>
                 <p class="chart-note">
                     Hostels carry the night-time AC signature: spiky weeks, higher weekends.
                     Library and the academic block run flat and drop hard on Sundays.

@@ -94,8 +94,8 @@ pub fn Buildings() -> impl IntoView {
             .collect::<Vec<_>>()
             .join(";");
         let prev_sig = prev_signature.get_untracked();
-        prev_signature.set(sig);
         let sig_changed = sig != prev_sig;
+        prev_signature.set(sig);
 
         let Some(container) = container_ref.get() else { return };
         next_frame(move || {
