@@ -1,0 +1,24 @@
+[package]
+name = "ember"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+leptos = { version = "0.6", features = ["csr"] }
+leptos_meta = { version = "0.6", features = ["csr"] }
+leptos_router = { version = "0.6", features = ["csr"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+gloo-net = { version = "0.5", features = ["http", "json"] }
+gloo-timers = { version = "0.3", features = ["futures"] }
+futures = { version = "0.3", default-features = false, features = ["async-await"] }
+wasm-bindgen = "=0.2.100"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Window", "Element", "HtmlElement", "Event", "MouseEvent", "SubmitEvent", "MediaQueryList", "DomRect", "SvgPathElement", "SvgElement", "HtmlCollection", "HtmlInputElement", "HtmlSelectElement", "console"] }
+console_error_panic_hook = "0.1"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"

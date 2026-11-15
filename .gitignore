@@ -1,0 +1,15 @@
+frontend/dist
+frontend/target
+frontend/bin
+frontend/node_modules
+backend/build
+backend/httplib.h
+bin
+dist
+target
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+.DS_Store

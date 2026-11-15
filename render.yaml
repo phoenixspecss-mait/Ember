@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: ember-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    healthCheckPath: /health
+    autoDeploy: true
