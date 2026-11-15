@@ -1,3 +1,4 @@
+use crate::api::WasteSplit;
 use crate::fmt::human_num;
 use crate::ui::{animate, reduced_motion};
 use leptos::*;
@@ -13,10 +14,11 @@ const PAD_BOTTOM: f64 = 40.0;
 #[component]
 pub fn LineChart(
     #[prop(into)] points: MaybeSignal<Vec<(String, f64)>>,
-    #[prop(optional)] anomalies: Option<MaybeSignal<Vec<usize>>>,
+    #[prop(optional)] anomalies: Option<Memo<Vec<usize>>>,
     #[prop(default = "")] unit: &'static str,
     #[prop(into)] aria: MaybeSignal<String>,
 ) -> impl IntoView {
+    let anomalies = anomalies.unwrap_or_else(|| Memo::new(move |_| Vec::new()));
     let vals = create_rw_signal(Vec::<f64>::new());
     let labels = create_rw_signal(Vec::<String>::new());
 
@@ -115,10 +117,7 @@ pub fn LineChart(
         let span_x = VIEW_W - PAD_X * 2.0;
         let span_y = VIEW_H - PAD_TOP - PAD_BOTTOM;
         let n = v.len();
-        let anom = anomalies
-            .as_ref()
-            .map(|s| s.get())
-            .unwrap_or_default();
+        let anom = anomalies.get();
         let mut nodes: Vec<View> = Vec::new();
         for (i, val) in v.iter().enumerate() {
             let x = PAD_X + i as f64 / (n - 1) as f64 * span_x;
@@ -173,10 +172,7 @@ pub fn LineChart(
         let ls = labels.get();
         let label = ls.get(idx)?.clone();
         let value = *v.get(idx)?;
-        let is_anom = anomalies
-            .as_ref()
-            .map(|s| s.get().contains(&idx))
-            .unwrap_or(false);
+        let is_anom = anomalies.with(|a| a.contains(&idx));
         Some((label, value, is_anom))
     });
 
@@ -240,18 +236,19 @@ pub fn WasteBars(
     let rows = create_memo(move |_| {
         let s = split.get();
         let t = total.get().max(1.0);
-        vec![
+        let raw: [(&str, &str, f64, &str); 4] = [
             ("organic", "Organic", s.organic, "solid"),
             ("plastic", "Plastic", s.plastic, "hatch"),
             ("paper", "Paper", s.paper, "dotted"),
             ("ewaste", "E-waste", s.ewaste, "outline"),
-        ]
-        .into_iter()
-        .map(|(key, label, value, style)| {
-            let pct = (value / t * 100.0).clamp(0.0, 100.0);
-            (key.to_string(), label, value, pct.to_string(), style)
-        })
-        .collect::<Vec<_>>()
+        ];
+        raw
+            .into_iter()
+            .map(|(key, label, value, style)| {
+                let pct = (value / t * 100.0).clamp(0.0, 100.0);
+                (key.to_string(), label, value, pct.to_string(), style)
+            })
+            .collect::<Vec<_>>()
     });
     view! {
         <div class="wb" role="img" aria-label="Waste categories by weight">

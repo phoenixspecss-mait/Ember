@@ -1,6 +1,7 @@
 use crate::api::*;
 use crate::demo;
 use leptos::*;
+use std::time::Duration;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BackendStatus {
@@ -96,7 +97,7 @@ fn push_new_alert_toasts(store: Store, resp: AlertsResponse) {
                 move || {
                     store.toasts.update(|toasts| toasts.retain(|t| t.id != id));
                 },
-                7000,
+                Duration::from_millis(7000),
             );
         }
     });

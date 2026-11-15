@@ -180,7 +180,7 @@ pub fn Log() -> impl IntoView {
                     } else if submitting.get() {
                         view! {
                             <div class="log-posting" role="status">
-                                <p class="panel-title">filing to the ledger…</p>
+                                <p class="panel-title">{"filing to the ledger…"}</p>
                                 <Skeleton lines=4/>
                             </div>
                         }
@@ -215,7 +215,7 @@ pub fn Log() -> impl IntoView {
                                         <span class="field-label">date</span>
                                         <input
                                             type="date"
-                                            max={today}
+                                            max={today.clone()}
                                             class="field-input"
                                             value={date.get_untracked()}
                                             on:input=move |e| date.set(event_target_value(&e))

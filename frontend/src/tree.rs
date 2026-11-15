@@ -1,5 +1,6 @@
 use crate::ui::reduced_motion;
 use leptos::*;
+use std::time::Duration;
 
 const LEAVES: [(f64, f64, f64); 27] = [
     (118.0, 96.0, -28.0),
@@ -77,9 +78,11 @@ pub fn CampusTree(#[prop(into)] score: Signal<u32>) -> impl IntoView {
         for (x, y, id) in shed.get_untracked() {
             set_timeout(
                 move || {
-                    shed.update(|list| list.retain(|(lx, ly, lid)| !(lx == x && ly == y && lid == id)));
+                    shed.update(|list| {
+                        list.retain(|(lx, ly, lid)| !(*lx == x && *ly == y && *lid == id))
+                    });
                 },
-                2600,
+                Duration::from_millis(2600),
             );
         }
     });

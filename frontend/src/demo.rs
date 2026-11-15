@@ -150,7 +150,7 @@ fn seed_readings(today: i64) -> Vec<Reading> {
             }
             out.push(Reading {
                 building: b.id.to_string(),
-                date,
+                date: date.clone(),
                 kwh: seed_round(kwh.max(0.0)),
                 water_l: seed_round(water.max(0.0)),
                 waste_kg: WasteSplit {
@@ -182,7 +182,7 @@ fn totals_between(readings: &[Reading], from: &str, to: &str) -> Totals {
         occupant_days: 0,
     };
     for r in readings {
-        if r.date < from || r.date > to {
+        if r.date.as_str() < from || r.date.as_str() > to {
             continue;
         }
         if let Some(b) = find_building(&r.building) {
@@ -326,7 +326,7 @@ pub fn detect_alerts(readings: &[Reading], today: i64) -> AlertsResponse {
             continue;
         }
         let label = find_building(id).map(|b| b.label).unwrap_or(id.as_str());
-        for (metric, decimals) in metrics {
+        for (metric, _decimals) in metrics {
             let value_of = |r: &Reading| -> f64 {
                 match metric {
                     "kwh" => r.kwh,

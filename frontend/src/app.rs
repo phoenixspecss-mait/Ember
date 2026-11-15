@@ -115,7 +115,7 @@ fn Footer() -> impl IntoView {
         <footer class="footer">
             <div class="footer-rule" aria-hidden="true"></div>
             <div class="footer-row">
-                <span>Ember · SDG 7 · 11 · 12 · 13</span>
+                <span>{"Ember · SDG 7 · 11 · 12 · 13"}</span>
                 <span class="footer-src">{source}</span>
                 <span>0.82 kg CO2 per kWh</span>
             </div>

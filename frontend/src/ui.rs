@@ -54,10 +54,8 @@ pub fn CountUp(
     let gen = create_rw_signal(0u64);
     create_effect(move |_| {
         let target = value.get();
-        let mine = gen.update(|g| {
-            *g += 1;
-            *g
-        });
+        gen.update(|g| *g += 1);
+        let mine = gen.get_untracked();
         if reduced_motion() {
             shown.set(target);
             return;
@@ -92,7 +90,7 @@ pub fn Delta(#[prop(into)] value: Signal<f64>, #[prop(default = 1)] decimals: us
 
 #[component]
 pub fn Tag(#[prop(into)] kind: String, children: Children) -> impl IntoView {
-    view! { <span class=format!("tag tag-{kind}")>{children}</span> }
+    view! { <span class=format!("tag tag-{kind}")>{children()}</span> }
 }
 
 #[component]
@@ -160,7 +158,7 @@ pub fn Toasts() -> impl IntoView {
                             <div class="toast">
                                 <div class="toast-head">
                                     <span class="toast-metric">{metric_label(&t.metric).to_string()}</span>
-                                    <span class="toast-date">{t.label} · {t.date}</span>
+                                    <span class="toast-date">{t.label}{" · "}{t.date}</span>
                                 </div>
                                 <p class="toast-body">{t.reason}</p>
                             </div>

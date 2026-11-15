@@ -1,4 +1,4 @@
-use crate::api::{find_building, Reading, WasteSplit, BUILDINGS};
+use crate::api::{find_building, WasteSplit, BUILDINGS};
 use crate::charts::{LineChart, ScoreRing, WasteBars};
 use crate::fmt::human_num;
 use crate::state::Store;
@@ -6,6 +6,7 @@ use crate::ui::{SectionHead, Skeleton, reduced_motion};
 use leptos::*;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::time::Duration;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 
@@ -13,7 +14,6 @@ pub fn next_frame(f: impl FnOnce() + 'static) {
     let slot: Rc<RefCell<Option<Box<dyn FnOnce() + 'static>>>> =
         Rc::new(RefCell::new(Some(Box::new(f))));
     let cb_slot: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
-    let cb_slot2 = cb_slot.clone();
     let closure: Closure<dyn FnMut(f64)> = Closure::wrap(Box::new(move |_t: f64| {
         if let Some(func) = slot.borrow_mut().take() {
             func();
@@ -133,7 +133,7 @@ pub fn Buildings() -> impl IntoView {
                             let _ = el.set_attribute("class", "lb-row");
                         }
                     },
-                    640,
+                    Duration::from_millis(640),
                 );
             });
         });
@@ -151,7 +151,7 @@ pub fn Buildings() -> impl IntoView {
         let _ = selected.get();
         detail_loading.set(true);
         let delay = if reduced_motion() { 0 } else { 240 };
-        set_timeout(move || detail_loading.set(false), delay);
+        set_timeout(move || detail_loading.set(false), Duration::from_millis(delay));
     });
 
     let detail = create_memo(move |_| {
@@ -324,21 +324,21 @@ pub fn Buildings() -> impl IntoView {
                                     <ScoreRing score=score_val size=150.0 caption="score"/>
                                     <div class="bdetail-facts">
                                         <div class="fact">
-                                            <span class="fact-label">electricity · 7d</span>
+                                            <span class="fact-label">{"electricity · 7d"}</span>
                                             <span class="fact-value">{human_num(kwh7, 0)} kWh</span>
                                         </div>
                                         <div class="fact">
-                                            <span class="fact-label">co2 per person · 7d</span>
+                                            <span class="fact-label">{"co2 per person · 7d"}</span>
                                             <span class="fact-value">{human_num(per_occ, 2)} kg</span>
                                         </div>
                                         <div class="fact">
-                                            <span class="fact-label">water · daily mean</span>
+                                            <span class="fact-label">{"water · daily mean"}</span>
                                             <span class="fact-value">{human_num(water_avg, 0)} L</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="bdetail-main">
-                                    <p class="panel-title">electricity · trailing 60 days</p>
+                                    <p class="panel-title">{"electricity · trailing 60 days"}</p>
                                     <LineChart points=days unit=" kWh" aria={chart_aria}/>
                                     <p class="panel-title">
                                         "waste · trailing 7 days · " {human_num(total, 1)} " kg total"

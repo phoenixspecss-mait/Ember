@@ -29,7 +29,7 @@ pub fn is_hostel(id: &str) -> bool {
 
 pub const CO2_PER_KWH: f64 = 0.82;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WasteSplit {
     pub organic: f64,
     pub plastic: f64,
@@ -88,7 +88,7 @@ pub struct Summary {
     pub campus_score: u32,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Alert {
     pub building: String,
     pub label: String,
@@ -107,7 +107,7 @@ pub struct AlertsResponse {
     pub count: u64,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct LeaderRow {
     pub rank: u32,
     pub building: String,
@@ -125,7 +125,7 @@ pub struct LeaderboardResponse {
     pub generated_at: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Suggestion {
     pub building: String,
     pub label: String,
