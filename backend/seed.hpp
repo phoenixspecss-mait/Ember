@@ -14,7 +14,7 @@ inline double seed_round(double v) { return std::round(v * 10.0) / 10.0; }
 inline std::vector<Reading> seed_readings() {
   std::vector<Reading> out;
   const auto& catalog = buildings();
-  out.reserve(catalog.size() * 60);
+  out.reserve(catalog.size() * 59);
 
   const long today = today_civil();
   std::mt19937 rng(20261104ul);
@@ -25,7 +25,7 @@ inline std::vector<Reading> seed_readings() {
     return std::sqrt(-2.0 * std::log(u1)) * std::cos(6.283185307179586 * u2);
   };
 
-  for (int d = 0; d < 60; ++d) {
+  for (int d = 0; d < 59; ++d) {
     const long civil = today - 59 + d;
     const std::string date = iso_date(civil);
     const int dow = static_cast<int>((civil + 4) % 7);

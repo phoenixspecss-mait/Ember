@@ -76,6 +76,29 @@ std::string iso_date(long civil_day) {
   return std::string(buf);
 }
 
+long latest_complete_day(const std::vector<Reading>& all) {
+  const long today = today_civil();
+  for (long d = today; d >= today - 400; --d) {
+    const std::string date = iso_date(d);
+    bool complete = true;
+    for (const Building& b : buildings()) {
+      bool filed = false;
+      for (const Reading& r : all) {
+        if (r.building == b.id && r.date == date) {
+          filed = true;
+          break;
+        }
+      }
+      if (!filed) {
+        complete = false;
+        break;
+      }
+    }
+    if (complete) return d;
+  }
+  return today - 1;
+}
+
 static std::string now_utc_iso() {
   std::time_t t = std::time(nullptr);
   std::tm tm{};

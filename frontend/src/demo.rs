@@ -70,8 +70,8 @@ fn seed_round(v: f64) -> f64 {
 
 fn seed_readings(today: i64) -> Vec<Reading> {
     let mut rng = Rng::new(2026_1104);
-    let mut out = Vec::with_capacity(BUILDINGS.len() * 60);
-    for d in 0..60i64 {
+    let mut out = Vec::with_capacity(BUILDINGS.len() * 59);
+    for d in 0..59i64 {
         let civil = today - 59 + d;
         let date = iso_date(civil);
         let dow = ((civil + 4) % 7 + 7) % 7;
@@ -596,12 +596,26 @@ pub fn build_suggestions(readings: &[Reading], today: i64) -> SuggestionsRespons
     SuggestionsResponse { suggestions: out }
 }
 
+fn latest_complete_day(readings: &[Reading], today: i64) -> i64 {
+    for d in (today - 400..=today).rev() {
+        let date = iso_date(d);
+        let complete = BUILDINGS
+            .iter()
+            .all(|b| readings.iter().any(|r| r.building == b.id && r.date == date));
+        if complete {
+            return d;
+        }
+    }
+    today - 1
+}
+
 pub fn generate() -> StoreSnapshot {
     let today = today_civil();
     let readings = seed_readings(today);
-    let summary = compute_summary(&readings, today);
-    let alerts = detect_alerts(&readings, today);
-    let leaderboard = compute_leaderboard(&readings, today);
-    let suggestions = build_suggestions(&readings, today);
+    let end = latest_complete_day(&readings, today);
+    let summary = compute_summary(&readings, end);
+    let alerts = detect_alerts(&readings, end);
+    let leaderboard = compute_leaderboard(&readings, end);
+    let suggestions = build_suggestions(&readings, end);
     StoreSnapshot { summary, readings, alerts, leaderboard, suggestions }
 }

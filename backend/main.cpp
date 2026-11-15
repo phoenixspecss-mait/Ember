@@ -566,24 +566,24 @@ int main() {
 
   svr.Get("/summary", [&](const httplib::Request&, httplib::Response& res) {
     const std::vector<ember::Reading> copy = snapshot();
-    res.set_content(ember::json_summary(ember::compute_summary(copy, ember::today_civil())),
+    res.set_content(ember::json_summary(ember::compute_summary(copy, ember::latest_complete_day(copy))),
                     kJsonType);
   });
 
   svr.Get("/alerts", [&](const httplib::Request&, httplib::Response& res) {
     const std::vector<ember::Reading> copy = snapshot();
-    res.set_content(ember::json_alerts(ember::detect_alerts(copy, ember::today_civil())), kJsonType);
+    res.set_content(ember::json_alerts(ember::detect_alerts(copy, ember::latest_complete_day(copy))), kJsonType);
   });
 
   svr.Get("/leaderboard", [&](const httplib::Request&, httplib::Response& res) {
     const std::vector<ember::Reading> copy = snapshot();
-    res.set_content(ember::json_leaderboard(ember::compute_leaderboard(copy, ember::today_civil())),
+    res.set_content(ember::json_leaderboard(ember::compute_leaderboard(copy, ember::latest_complete_day(copy))),
                     kJsonType);
   });
 
   svr.Get("/suggestions", [&](const httplib::Request&, httplib::Response& res) {
     const std::vector<ember::Reading> copy = snapshot();
-    res.set_content(ember::json_suggestions(ember::build_suggestions(copy, ember::today_civil())),
+    res.set_content(ember::json_suggestions(ember::build_suggestions(copy, ember::latest_complete_day(copy))),
                     kJsonType);
   });
 

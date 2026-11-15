@@ -37,6 +37,7 @@ double co2_from_kwh(double kwh);
 long today_civil();
 long days_from_civil(int y, unsigned m, unsigned d);
 std::string iso_date(long civil_day);
+long latest_complete_day(const std::vector<Reading>& all);
 
 struct Summary {
   int window_days = 7;

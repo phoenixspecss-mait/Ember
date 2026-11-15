@@ -1,6 +1,6 @@
 # Ember API
 
-The Ember backend is a C++17 service built with [cpp-httplib](https://github.com/yhirose/cpp-httplib). It keeps all data in memory, seeded at startup with a deterministic 60-day dataset for six campus buildings. The live service is deployed on Render; the frontend reads `EMBER_API_URL` (the Render URL) at compile time and talks to this API directly from the browser.
+The Ember backend is a C++17 service built with [cpp-httplib](https://github.com/yhirose/cpp-httplib). It keeps all data in memory, seeded at startup with a deterministic 59-day dataset for six campus buildings, ending yesterday so today's meters start open. The live service is deployed on Render; the frontend reads `EMBER_API_URL` (the Render URL) at compile time and talks to this API directly from the browser.
 
 - All responses are `application/json; charset=utf-8`.
 - CORS is open: every response carries `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET, POST, OPTIONS`, `Access-Control-Allow-Headers: Content-Type`, `Access-Control-Max-Age: 86400`. An `OPTIONS` request to any path returns `204 No Content`.
@@ -73,6 +73,8 @@ Anywhere a metric is named (`/alerts`, change tables, chart series), the API use
 
 ## Endpoints
 
+`GET /summary`, `/alerts`, `/leaderboard`, and `/suggestions` all end their windows on the latest complete civil day: today when all six buildings have a reading for today, otherwise the latest earlier day with all six readings (normally yesterday). That keeps seven-day comparisons like-for-like while today's meters are still open.
+
 ### `GET /health`
 
 Liveness probe. Confirms the process is up and the seed ran.
@@ -82,12 +84,12 @@ Liveness probe. Confirms the process is up and the seed ran.
   "ok": true,
   "service": "ember",
   "buildings": 6,
-  "readings": 360,
+  "readings": 354,
   "uptime_s": 4271
 }
 ```
 
-`readings` is the number of stored day-records (360 right after boot: 6 buildings x 60 days). It grows if readings are filed for new dates.
+`readings` is the number of stored day-records (354 right after boot: 6 buildings x 59 days). It grows as today's open meters are filed, and as readings are added for new dates.
 
 ---
 
@@ -142,17 +144,17 @@ Query parameters, both optional:
       "waste_kg": { "organic": 40.1, "plastic": 15.6, "paper": 17.9, "ewaste": 1.2 }
     }
   ],
-  "count": 360
+  "count": 354
 }
 ```
 
-`count` is the number of readings in `readings`.
+`count` is the number of readings in `readings` (354 right after boot for the default 60-day window, because today's six meters are still open). This endpoint returns raw stored rows, including a partially filed today; the analytical endpoints ignore today until all six meters are in.
 
 ---
 
 ### `GET /summary`
 
-Campus totals for the trailing 7 civil days (ending today, UTC), with the previous 7 days as the comparison window.
+Campus totals for the trailing 7 civil days, ending on the latest complete day (UTC), with the previous 7 days as the comparison window. `window_end` names the day the window closes; it is normally yesterday until all six of today's meters are filed.
 
 ```json
 {
@@ -182,9 +184,9 @@ Campus totals for the trailing 7 civil days (ending today, UTC), with the previo
 - `change_pct` is `(this week - last week) / last week * 100` for each of `kwh`, `co2_kg`, `water_l`, `waste_kg`. If last week is zero, the change is reported as `0`.
 - `waste_split` is the category split of `waste_kg` for the same trailing 7 days.
 
-**Campus score (0–100).** Per-building efficiency over the last 7 days is compared against the same building's 60-day baseline, all normalised per occupant per day:
+**Campus score (0–100).** Per-building efficiency over the last 7 complete days is compared against the same building's 60-day baseline, all normalised per occupant per day:
 
-- `ratio = (7-day total / occupant-days in 7 days) / (60-day total / occupant-days in 60 days)` for each of energy (`kwh`), water (`water_l`), waste (`waste_kg`).
+- `ratio = (7-day total / occupant-days in 7 days) / (60-day total / occupant-days in 60 days)` for each of energy (`kwh`), water (`water_l`), waste (`waste_kg`), using complete days only.
 - each subscore = `clamp(0, 100, 100 - 220 * (ratio - 0.88))`: a week exactly on baseline scores about 74, 8% better than baseline saturates near 100, worse weeks fall away linearly.
 - `campus_score = round(0.45 * energy + 0.30 * water + 0.25 * waste)`, clamped to 0–100.
 
@@ -192,7 +194,7 @@ Campus totals for the trailing 7 civil days (ending today, UTC), with the previo
 
 ### `GET /alerts`
 
-Anomaly feed. For every building and every metric key (`kwh`, `water_l`, `waste_kg`), each day is compared against the rolling 7 days immediately before it:
+Anomaly feed. For every building and every metric key (`kwh`, `water_l`, `waste_kg`), each day up to the latest complete day is compared against the rolling 7 days immediately before it:
 
 - mean `m` and population standard deviation `s` of the previous 7 days,
 - the day is an anomaly when `value > m + 2s` **and** `value > 1.40 * m` (the second clause keeps rolling-window noise and weekly patterns like laundry days from being flagged),
@@ -224,7 +226,7 @@ Anomaly feed. For every building and every metric key (`kwh`, `water_l`, `waste_
 
 ### `GET /leaderboard`
 
-Buildings ranked by electricity emissions per occupant over the trailing 7 days, most efficient first. `rank` 1 is the benchmark.
+Buildings ranked by electricity emissions per occupant over the trailing 7 complete days, most efficient first. `rank` 1 is the benchmark.
 
 ```json
 {
@@ -251,7 +253,7 @@ Buildings ranked by electricity emissions per occupant over the trailing 7 days,
 
 ### `GET /suggestions`
 
-Rule-based, building-specific advice generated server-side from the last 7 days against 60-day baselines and campus averages. Every number in every sentence is computed from stored readings, never hard-coded.
+Rule-based, building-specific advice generated server-side from the last 7 complete days against 60-day baselines and campus averages. Every number in every sentence is computed from stored readings, never hard-coded.
 
 ```json
 {
@@ -284,13 +286,15 @@ The rules:
 
 ## Seed behaviour
 
-At boot the server generates 60 days ending today (UTC) for all six buildings, using a fixed PRNG seed, so every deployment starts with the same shape of data:
+At boot the server generates 59 days ending yesterday (UTC) for all six buildings, using a fixed PRNG seed, so every deployment starts with the same shape of data. Today's six meters are intentionally left open: the cover page and overview show how many are outstanding, and `POST /readings` files them.
+
+The seeded shape:
 
 - **Hostels** carry a night-time AC signature: about 30% of days are "hot days" with ~17% higher electricity, plus weekend uplift (students in rooms all day). Water peaks midweek on laundry days (~25%).
 - **Library and main academic block** drop hard on weekends and hold flat on weekdays.
 - Waste is split per building type (hostels are organic-heavy, the academic block produces more paper and plastic).
-- Five deterministic anomalies are injected so `/alerts` has material on first load: a two-day water leak in Hostel C (2.45x), an HVAC fault in the main block (1.72x kWh), a library event clearout (1.95x waste), a two-day dryer run in Hostel A (1.55x kWh), a recent laundry override in Hostel D (1.85x water), and a plastic contamination event in the main block (3.2x plastic).
+- Six deterministic anomalies are injected so `/alerts` has material on first load: a two-day water leak in Hostel C (2.45x), an HVAC fault in the main block (1.72x kWh), a library event clearout (1.95x waste), a two-day dryer run in Hostel A (1.55x kWh), a recent laundry override in Hostel D (1.85x water), and a plastic contamination event in the main block (3.2x plastic).
 
-The seed is regenerating every boot from the current date, so day labels stay current; the PRNG sequence, multipliers and injected anomalies are identical every boot.
+The seed is regenerated every boot from the current date, so day labels stay current; the PRNG sequence, multipliers and injected anomalies are identical every boot.
 
 `POST /readings` records persist only in memory. A Render free-tier redeploy or sleep-wake reseeds the base dataset; filed readings that overlapped the seeded window are replaced by the reseed.

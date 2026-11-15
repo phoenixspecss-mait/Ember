@@ -1,15 +1,21 @@
-use crate::api::{Alert, AlertsResponse, Reading};
+use crate::api::{api_base, Alert, AlertsResponse, Reading, BUILDINGS};
 use crate::charts::{LineChart, ScoreRing};
 use crate::fmt::human_num;
 use crate::state::Store;
 use crate::tree::CampusTree;
 use crate::ui::{metric_label, CountUp, Delta, SectionHead, Tag};
 use leptos::*;
+use leptos_router::A;
 
 fn campus_series(readings: &[Reading], alerts: &AlertsResponse) -> (Vec<(String, f64)>, Vec<usize>) {
     let mut dates: Vec<String> = readings.iter().map(|r| r.date.clone()).collect();
     dates.sort();
     dates.dedup();
+    dates.retain(|d| {
+        BUILDINGS
+            .iter()
+            .all(|b| readings.iter().any(|r| r.building == b.id && &r.date == d))
+    });
     let mut series: Vec<(String, f64)> = Vec::with_capacity(dates.len());
     for d in &dates {
         let sum: f64 = readings.iter().filter(|r| &r.date == d).map(|r| r.kwh).sum();
@@ -40,6 +46,17 @@ pub fn Overview() -> impl IntoView {
     let waste_delta = create_memo(move |_| store.summary.get().change_pct.waste_kg);
     let score = create_memo(move |_| store.summary.get().campus_score);
     let window_end = create_memo(move |_| store.summary.get().window_end);
+    let open_today = create_memo(move |_| {
+        if api_base().is_none() {
+            return 0usize;
+        }
+        let today = crate::demo::iso_date(crate::demo::today_civil());
+        let readings = store.readings.get();
+        BUILDINGS
+            .iter()
+            .filter(|b| !readings.iter().any(|r| r.building == b.id && r.date == today))
+            .count()
+    });
 
     let series = create_memo(move |_| {
         let (r, a) = (store.readings.get(), store.alerts.get());
@@ -58,13 +75,13 @@ pub fn Overview() -> impl IntoView {
             s.iter().map(|p| p.1).sum::<f64>() / s.len() as f64
         };
         format!(
-            "Campus electricity over the last 60 days, averaging {} kilowatt hours per day. Vermillion markers mark anomalous days.",
+            "Campus electricity over the last {} days, averaging {} kilowatt hours per day. Vermillion markers mark anomalous days.",
+            s.len(),
             human_num(avg, 0)
         )
     });
 
     let alerts = create_memo(move |_| store.alerts.get().alerts);
-    let alert_count = create_memo(move |_| store.alerts.get().count);
     let suggestions = create_memo(move |_| store.suggestions.get().suggestions);
 
     view! {
@@ -74,7 +91,7 @@ pub fn Overview() -> impl IntoView {
                 <div class="hero-main">
                     <p class="kicker rise">
                         <span class="mask"><span class="mask-inner">
-                            "CO2 this week · seven days ending " {move || window_end.get()}
+                            "CO2 this week · seven complete days ending " {move || window_end.get()}
                         </span></span>
                     </p>
                     <h1 class="hero-number">
@@ -102,11 +119,33 @@ pub fn Overview() -> impl IntoView {
 
             <div class="rule rule-anim" aria-hidden="true"></div>
 
+            {move || {
+                let n = open_today.get();
+                if n == 0 {
+                    None
+                } else {
+                    Some(view! {
+                        <div class="open-meter" role="status">
+                            <span class="open-dot" aria-hidden="true"></span>
+                            <div class="open-meter-copy">
+                                <span class="open-meter-title">
+                                    {format!("{n} of {} meters still open for today", BUILDINGS.len())}
+                                </span>
+                                <span class="open-meter-note">
+                                    "the day joins the week once all six meters are in"
+                                </span>
+                            </div>
+                            <A href="/log" class="open-meter-link">"File now →"</A>
+                        </div>
+                    })
+                }
+            }}
+
             <section class="section">
                 <SectionHead
                     num="01"
                     title="Electricity, campus-wide"
-                    note="six buildings · trailing 60 days · kWh per day"
+                    note="six buildings · 60-day window · kWh per day"
                 />
                 <LineChart points=series anomalies=anom unit=" kWh" aria=chart_aria/>
                 <p class="chart-note">

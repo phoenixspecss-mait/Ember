@@ -4,6 +4,7 @@ mod buildings;
 mod charts;
 mod demo;
 mod fmt;
+mod landing;
 mod log;
 mod overview;
 mod state;

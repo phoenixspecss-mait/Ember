@@ -1,6 +1,6 @@
 # Ember — Campus Energy & Waste Ledger
 
-A campus energy and waste tracker: a C++17 REST API and a Rust/Leptos single-page dashboard over one shared ledger of meter readings. Six buildings, sixty days, seven-day analysis windows.
+A campus energy and waste tracker: a C++17 REST API and a Rust/Leptos single-page dashboard over one shared ledger of meter readings. Six buildings, one shared ledger, seven-day analysis windows.
 
 Built around **SDG 7** (affordable, clean energy), **SDG 11** (sustainable communities), **SDG 12** (responsible consumption), and **SDG 13** (climate action).
 
@@ -12,7 +12,7 @@ Built around **SDG 7** (affordable, clean energy), **SDG 11** (sustainable commu
 | Frontend  | Rust, Leptos 0.6 (CSR), Trunk, web-sys    | Vercel   | `frontend/`|
 | Contract  | Full request/response reference           | —        | `API.md`   |
 
-The backend is stateless apart from an in-memory ledger seeded at boot with 60 days of deterministic readings (fixed RNG seed, identical output on every cold start) for six buildings. All analytics — anomaly detection, scoring, suggestions — run server-side; the frontend mirrors the same formulas client-side only for its offline demo dataset.
+The backend is stateless apart from an in-memory ledger seeded at boot with 59 days of deterministic readings (fixed RNG seed, identical output on every cold start) for six buildings, ending yesterday so today's meters start open. All analytics — anomaly detection, scoring, suggestions — run server-side; the frontend mirrors the same formulas client-side only for its offline demo dataset.
 
 ```
 Ember/
@@ -21,7 +21,7 @@ Ember/
 └── backend/
     ├── main.cpp            http server, routing, CORS, validation, PORT env
     ├── analytics.cpp/.hpp  summary, alerts, leaderboard, suggestions
-    ├── seed.hpp            deterministic 60-day, 6-building dataset
+    ├── seed.hpp            deterministic 59-day, 6-building dataset
     ├── CMakeLists.txt
     └── Dockerfile
 └── frontend/
@@ -40,11 +40,13 @@ All endpoints JSON; CORS enabled for every origin and method; invalid input retu
 |---|---|
 | `GET /health` | liveness + counts (buildings, readings, uptime) |
 | `POST /readings` | file one building-day (kWh, litres, waste by category); replaces an existing row for the same building+date |
-| `GET /readings?building=&days=` | reading history, 1–60 days, optional building filter |
-| `GET /summary` | trailing-7-day totals, week-over-week change, campus score |
+| `GET /readings?building=&days=` | reading history, 1–180 days, optional building filter |
+| `GET /summary` | seven-day totals ending the latest complete day, week-over-week change, campus score |
 | `GET /alerts` | anomaly days flagged by the rolling rule below, newest first, cap 12 |
-| `GET /leaderboard` | per-building 7-day kWh, CO2, per-occupant CO2, 0–100 score |
+| `GET /leaderboard` | per-building seven-day kWh, CO2, per-occupant CO2, 0–100 score |
 | `GET /suggestions` | rule-based, building-specific action notes, priority-ordered, cap 8 |
+
+Analytical windows end on the latest complete day: today once all six buildings have filed, otherwise yesterday. That keeps the seven-day comparisons like-for-like while today's meters are open.
 
 **Formulas** (full detail in `API.md`):
 
@@ -56,6 +58,9 @@ All endpoints JSON; CORS enabled for every origin and method; invalid input retu
 
 ## Frontend behavior
 
+- `/` is a cover page: the ledger's current numbers on a plate, how the ledger works, what every formula means, and each building's state for today. "Get started" opens the dashboard at `/overview`.
+- `/overview` is the dashboard, `/buildings` the per-building detail, `/log` the filing form.
+- Today's meters start open: the cover page counts them, and the overview carries a "file now" callout until every building has a reading for the current day. Analytical windows close on the latest complete day, so today joins the week once all six readings are filed.
 - Backend URL is baked in at compile time from `EMBER_API_URL` (`option_env!`); with no URL set, the app runs entirely on the client-side demo dataset.
 - With a URL set: it polls `/health` (8 s timeout) every 9 s until the backend wakes — the masthead shows a "waking the backend… try N" tag — then switches to live data, refreshing summary/alerts/leaderboard/suggestions every 6 s and full readings every 30 s. New anomalies arrive as toasts.
 - Charts are hand-built SVG (line chart with anomaly markers and crosshair tooltip, score rings, waste bars with hatched fills, a score-driven tree illustration), animated with rAF tweens, and every animation respects `prefers-reduced-motion`.
@@ -83,15 +88,15 @@ curl -X POST https://<render-url>/readings \
   -d '{"building":"hostel-a","date":"2026-11-15","kwh":900,"water_l":24000,"waste_kg":{"organic":40,"plastic":18,"paper":12,"ewaste":5}}'
 ```
 
-The dashboard tweens to the new row within ~6 s, and the 5 kg e-waste raises a "book a certified pickup" field note.
+The open-meter count drops immediately. Once all six buildings have a reading for 2026-11-15, the day closes, the seven-day window rolls forward, and the 5 kg e-waste raises a "book a certified pickup" field note.
 
 ## Local development
 
 No toolchain setup is required to deploy, but both halves build conventionally:
 
 ```sh
-cd backend && cmake -B build && cmake --build build && PORT=10000 ./build/ember
+cd backend && cmake -B build && cmake --build build && PORT=10000 ./build/ember-server
 cd frontend && trunk serve --release    # expects EMBER_API_URL at compile time
 ```
 
-`trunk serve` without `EMBER_API_URL` renders the full UI on the demo dataset — the same 60-day seed formulas the server uses, evaluated in the browser.
+`trunk serve` without `EMBER_API_URL` renders the full UI on the demo dataset — the same 59-day seed formulas the server uses, evaluated in the browser.

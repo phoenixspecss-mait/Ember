@@ -169,7 +169,7 @@ pub fn Log() -> impl IntoView {
                                 </h2>
                                 <p class="success-summary">{summary}</p>
                                 <p class="success-note">
-                                    "The charts tween to it on the next poll; nothing else to do."
+                                    "The open count drops now; the day joins the week once every building is in."
                                 </p>
                                 <button type="button" class="btn" on:click=reset>
                                     "File another reading"

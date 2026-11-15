@@ -220,7 +220,7 @@ pub fn Buildings() -> impl IntoView {
                 <SectionHead
                     num="01"
                     title="Leaderboard"
-                    note="CO2 per occupant over the trailing seven days · lower is better"
+                    note="CO2 per occupant over the last seven complete days · lower is better"
                 />
                 <div class="lb-sort" role="group" aria-label="Sort leaderboard">
                     <SortButton label="co2 / occupant" value="co2" mode=sort_mode/>
@@ -338,7 +338,7 @@ pub fn Buildings() -> impl IntoView {
                                     </div>
                                 </div>
                                 <div class="bdetail-main">
-                                    <p class="panel-title">{"electricity · trailing 60 days"}</p>
+                                    <p class="panel-title">{"electricity · 60-day window"}</p>
                                     <LineChart points=days unit=" kWh" aria={chart_aria}/>
                                     <p class="panel-title">
                                         "waste · trailing 7 days · " {human_num(total, 1)} " kg total"

@@ -1,5 +1,6 @@
 use crate::api::api_base;
 use crate::buildings::Buildings;
+use crate::landing::Landing;
 use crate::log::Log;
 use crate::overview::Overview;
 use crate::state::{init_store, start_backend, BackendStatus, Store};
@@ -19,7 +20,8 @@ pub fn App() -> impl IntoView {
                 <MastHead/>
                 <main class="main">
                     <Routes>
-                        <Route path="/" view=Overview/>
+                        <Route path="/" view=Landing/>
+                        <Route path="/overview" view=Overview/>
                         <Route path="/buildings" view=Buildings/>
                         <Route path="/log" view=Log/>
                     </Routes>
@@ -88,7 +90,7 @@ fn MastHead() -> impl IntoView {
                 <div class="masthead-status">{status}</div>
             </div>
             <nav class="nav" aria-label="Sections">
-                <A href="/" class=move || is_active("/")>
+                <A href="/overview" class=move || is_active("/overview")>
                     <span class="nav-num">01</span> Overview
                 </A>
                 <A href="/buildings" class=move || is_active("/buildings")>
