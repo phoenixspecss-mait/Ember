@@ -117,6 +117,13 @@ pub fn LineChart(
         let span_x = VIEW_W - PAD_X * 2.0;
         let span_y = VIEW_H - PAD_TOP - PAD_BOTTOM;
         let n = v.len();
+        let label_indices: Vec<usize> = if n <= 8 {
+            (0..n).collect()
+        } else {
+            (0..=5)
+                .map(|k| ((k as f64 * (n - 1) as f64) / 5.0).round() as usize)
+                .collect()
+        };
         let anom = anomalies.get();
         let mut nodes: Vec<View> = Vec::new();
         for (i, val) in v.iter().enumerate() {
@@ -132,11 +139,17 @@ pub fn LineChart(
                 }
                 .into_view());
             }
-            let show_label = n <= 8 || i == 0 || i == n - 1 || i % (n / 5).max(1) == 0;
-            if show_label && i < ls.len() {
+            if label_indices.contains(&i) && i < ls.len() {
                 let label = ls[i].clone();
+                let (lx, anchor) = if i == 0 {
+                    (PAD_X, "start")
+                } else if i == n - 1 {
+                    (VIEW_W - PAD_X, "end")
+                } else {
+                    (x, "middle")
+                };
                 nodes.push(view! {
-                    <text class="axis-label" x=x y={VIEW_H - PAD_BOTTOM + 18.0} text-anchor="middle">
+                    <text class="axis-label" x=lx y={VIEW_H - PAD_BOTTOM + 18.0} text-anchor=anchor>
                         {label}
                     </text>
                 }
